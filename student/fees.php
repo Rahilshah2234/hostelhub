@@ -23,25 +23,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $method = trim($_POST['payment_method'] ?? 'UPI');
     $txnRef = trim($_POST['transaction_ref'] ?? '');
 
+    // Validate payment method against ENUM
+    $allowedMethods = ['UPI', 'Net Banking', 'Card', 'Cash'];
+    if (!in_array($method, $allowedMethods, true)) {
+        $method = 'UPI';
+    }
+
     if (empty($txnRef)) {
         $txnRef = 'TXN-' . strtoupper(substr(md5(uniqid()), 0, 10));
     }
 
     if ($feeId > 0) {
-        // Verify fee belongs to this student
-        $check = $pdo->prepare("SELECT COUNT(*) FROM fees WHERE FeeID = :fid AND StudentID = :sid");
+        // Verify fee belongs to this student and check current payment status
+        $check = $pdo->prepare("SELECT Status FROM fees WHERE FeeID = :fid AND StudentID = :sid");
         $check->execute([':fid' => $feeId, ':sid' => $studentId]);
+        $currentStatus = $check->fetchColumn();
 
-        if ($check->fetchColumn() > 0) {
+        if ($currentStatus === false) {
+            set_flash('danger', 'Invalid or unassociated fee invoice.');
+        } elseif ($currentStatus === 'Paid') {
+            set_flash('warning', 'This invoice has already been paid and finalized. Receipts cannot be altered.');
+        } else {
             $stmt = $pdo->prepare("
                 UPDATE fees 
                 SET Status = 'Paid', PaidDate = CURDATE(), PaymentMethod = :pm, TransactionRef = :ref 
-                WHERE FeeID = :fid
+                WHERE FeeID = :fid AND StudentID = :sid AND Status IN ('Pending', 'Overdue')
             ");
-            $stmt->execute([':pm' => $method, ':ref' => $txnRef, ':fid' => $feeId]);
+            $stmt->execute([':pm' => $method, ':ref' => $txnRef, ':fid' => $feeId, ':sid' => $studentId]);
             set_flash('success', 'Fee payment successfully processed! Your electronic receipt has been generated.');
-        } else {
-            set_flash('danger', 'Invalid fee record.');
         }
     }
     redirect('student/fees.php');
