@@ -59,30 +59,43 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($action === 'delete') {
         $id = (int)($_POST['block_id'] ?? 0);
         if ($id > 0) {
-            try {
-                $stmt = $pdo->prepare("DELETE FROM blocks WHERE BlockID = :id");
-                $stmt->execute([':id' => $id]);
-                set_flash('success', 'Hostel block deleted successfully.');
-            } catch (PDOException $e) {
-                set_flash('danger', 'Cannot delete block: Associated rooms or wardens exist.');
+            // Check if rooms exist in this block to prevent accidental CASCADE deletion of rooms & allocations
+            $checkRooms = $pdo->prepare("SELECT COUNT(*) FROM rooms WHERE BlockID = :id");
+            $checkRooms->execute([':id' => $id]);
+            if ($checkRooms->fetchColumn() > 0) {
+                set_flash('danger', 'Cannot delete block: Associated rooms exist in this block. Please delete or reassign the rooms first.');
+            } else {
+                try {
+                    $stmt = $pdo->prepare("DELETE FROM blocks WHERE BlockID = :id");
+                    $stmt->execute([':id' => $id]);
+                    set_flash('success', 'Hostel block deleted successfully.');
+                } catch (PDOException $e) {
+                    set_flash('danger', 'Cannot delete block: Associated records exist.');
+                }
             }
         }
         redirect('admin/blocks.php');
     }
 }
 
-// Fetch all blocks with statistics
+// Fetch all blocks with statistics (Subquery avoids Cartesian multiplication and ONLY_FULL_GROUP_BY errors)
 $blocks = $pdo->query("
     SELECT 
         b.*,
-        COUNT(DISTINCT r.RoomID) as total_rooms,
-        COALESCE(SUM(r.Capacity), 0) as total_capacity,
-        COALESCE(SUM(r.Occupied), 0) as total_occupied,
-        w.Name as WardenName
+        COALESCE(r.total_rooms, 0) as total_rooms,
+        COALESCE(r.total_capacity, 0) as total_capacity,
+        COALESCE(r.total_occupied, 0) as total_occupied,
+        (SELECT GROUP_CONCAT(w.Name SEPARATOR ', ') FROM wardens w WHERE w.BlockID = b.BlockID) as WardenName
     FROM blocks b
-    LEFT JOIN rooms r ON b.BlockID = r.BlockID
-    LEFT JOIN wardens w ON b.BlockID = w.BlockID
-    GROUP BY b.BlockID
+    LEFT JOIN (
+        SELECT 
+            BlockID,
+            COUNT(RoomID) as total_rooms,
+            SUM(Capacity) as total_capacity,
+            SUM(Occupied) as total_occupied
+        FROM rooms
+        GROUP BY BlockID
+    ) r ON b.BlockID = r.BlockID
     ORDER BY b.BlockID ASC
 ")->fetchAll();
 
