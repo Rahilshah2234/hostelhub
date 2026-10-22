@@ -5,7 +5,10 @@ require_once __DIR__ . '/../includes/helpers.php';
 require_once __DIR__ . '/../includes/csrf.php';
 require_once __DIR__ . '/../includes/auth.php';
 
-if (is_logged_in()) {
+$isAdmin = is_logged_in() && strtolower(current_role()) === 'admin';
+
+// Non-admin logged-in users should not access registration
+if (is_logged_in() && !$isAdmin) {
     redirect('index.php');
 }
 
@@ -88,8 +91,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 $pdo->commit();
 
-                set_flash('success', 'Registration successful! You can now log in with your credentials.');
-                redirect('auth/login.php');
+                if ($isAdmin) {
+                    set_flash('success', "Student account for {$formData['name']} registered successfully!");
+                    redirect('admin/students.php');
+                } else {
+                    set_flash('success', 'Registration successful! You can now log in with your credentials.');
+                    redirect('auth/login.php');
+                }
             } catch (Exception $e) {
                 $pdo->rollBack();
                 $errors[] = 'Registration failed: ' . $e->getMessage();
@@ -111,8 +119,14 @@ require_once __DIR__ . '/../includes/header.php';
                         <div class="brand-icon-box mx-auto mb-3" style="width: 48px; height: 48px; font-size: 1.5rem;">
                             <i class="bi bi-person-plus"></i>
                         </div>
-                        <h3 class="fw-bold text-dark">Student Registration</h3>
-                        <p class="text-muted small">Create your student account to apply for hostel rooms and manage payments</p>
+                        <?php if ($isAdmin): ?>
+                            <div class="mb-2"><span class="badge bg-secondary"><i class="bi bi-shield-lock me-1"></i>Admin Mode</span></div>
+                            <h3 class="fw-bold text-dark">Register New Student</h3>
+                            <p class="text-muted small">Create a new student resident account and login credentials directly from admin panel</p>
+                        <?php else: ?>
+                            <h3 class="fw-bold text-dark">Student Registration</h3>
+                            <p class="text-muted small">Create your student account to apply for hostel rooms and manage payments</p>
+                        <?php endif; ?>
                     </div>
 
                     <?php if (!empty($errors)): ?>
@@ -214,8 +228,14 @@ require_once __DIR__ . '/../includes/header.php';
                     </form>
 
                     <div class="text-center mt-4 pt-3 border-top">
-                        <span class="small text-muted">Already registered? </span>
-                        <a href="<?= BASE_URL ?>/auth/login.php" class="small fw-semibold text-decoration-none" style="color: var(--primary-teal);">Sign in here</a>
+                        <?php if ($isAdmin): ?>
+                            <a href="<?= BASE_URL ?>/admin/students.php" class="small fw-semibold text-decoration-none" style="color: var(--primary-teal);">
+                                <i class="bi bi-arrow-left me-1"></i>Back to Student Directory
+                            </a>
+                        <?php else: ?>
+                            <span class="small text-muted">Already registered? </span>
+                            <a href="<?= BASE_URL ?>/auth/login.php" class="small fw-semibold text-decoration-none" style="color: var(--primary-teal);">Sign in here</a>
+                        <?php endif; ?>
                     </div>
                 </div>
             </div>
