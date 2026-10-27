@@ -12,6 +12,49 @@ document.addEventListener('DOMContentLoaded', function () {
         }, false);
     });
 
+    // Validate registration phone number inputs
+    const registrationPhoneInputs = document.querySelectorAll(
+        'input[name="phone"], input[name="emergency_phone"]'
+    );
+
+    registrationPhoneInputs.forEach(function (input) {
+        input.addEventListener('input', function () {
+            // Allow only digits and limit the input to 10.
+            input.value = input.value.replace(/\D/g, '').slice(0, 10);
+
+            if (input.value.length > 0 && input.value.length < 10) {
+                input.setCustomValidity('Enter exactly 10 digits.');
+            } else {
+                input.setCustomValidity('');
+            }
+        });
+
+        input.addEventListener('paste', function (event) {
+            event.preventDefault();
+
+            let digits = event.clipboardData
+                .getData('text')
+                .replace(/\D/g, '');
+
+            // Remove the Indian country code if included in pasted text.
+            if (digits.length === 12 && digits.startsWith('91')) {
+                digits = digits.slice(2);
+            }
+
+            if (digits.length === 10) {
+                input.value = digits;
+                input.setCustomValidity('');
+                input.dispatchEvent(new Event('input', { bubbles: true }));
+            } else {
+                input.value = digits.length < 10 ? digits : '';
+                input.setCustomValidity(
+                    'Enter exactly 10 digits. You may include +91 when pasting.'
+                );
+                input.reportValidity();
+            }
+        });
+    });
+
     // Auto-dismiss alerts after 5 seconds
     const alerts = document.querySelectorAll('.alert:not(.alert-permanent)');
     alerts.forEach(function(alert) {

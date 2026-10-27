@@ -30,9 +30,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (empty($formData['name'])) $errors[] = 'Full name is required.';
         if (empty($formData['username'])) $errors[] = 'Username is required.';
         if (empty($formData['email']) || !filter_var($formData['email'], FILTER_VALIDATE_EMAIL)) $errors[] = 'Valid college email is required.';
-        if (empty($formData['phone'])) $errors[] = 'Contact phone number is required.';
-        if (empty($formData['emergency_contact'])) $errors[] = 'Emergency contact person name is required.';
-        if (empty($formData['emergency_phone'])) $errors[] = 'Emergency phone number is required.';
+        if (empty($formData['phone'])) {
+            $errors[] = 'Contact phone number is required.';
+        } elseif (!preg_match('/^[0-9]{10}$/', $formData['phone'])) {
+            $errors[] = 'Mobile phone number must contain exactly 10 digits.';
+        }
+
+        if (empty($formData['emergency_contact'])) {
+            $errors[] = 'Emergency contact person name is required.';
+        }
+
+        if (empty($formData['emergency_phone'])) {
+            $errors[] = 'Emergency phone number is required.';
+        } elseif (!preg_match('/^[0-9]{10}$/', $formData['emergency_phone'])) {
+            $errors[] = 'Emergency phone number must contain exactly 10 digits.';
+        }
         if (strlen($password) < 6) $errors[] = 'Password must be at least 6 characters.';
         if ($password !== $confirmPassword) $errors[] = 'Passwords do not match.';
 
@@ -163,8 +175,26 @@ require_once __DIR__ . '/../includes/header.php';
                                 <input type="email" name="email" class="form-control" value="<?= htmlspecialchars($formData['email']) ?>" required placeholder="name@college.edu">
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label small fw-semibold">Mobile Phone Number *</label>
-                                <input type="tel" name="phone" class="form-control" value="<?= htmlspecialchars($formData['phone']) ?>" required placeholder="+91 9876543210">
+                                <label for="phone" class="form-label small fw-semibold">
+                                    Mobile Phone Number *
+                                </label>
+                                <div class="input-group">
+                                    <span class="input-group-text">+91</span>
+                                    <input
+                                        type="tel"
+                                        id="phone"
+                                        name="phone"
+                                        class="form-control"
+                                        value="<?= htmlspecialchars($formData['phone']) ?>"
+                                        required
+                                        inputmode="numeric"
+                                        pattern="[0-9]{10}"
+                                        minlength="10"
+                                        maxlength="10"
+                                        autocomplete="tel-national"
+                                        placeholder="9876543210"
+                                        title="Enter exactly 10 digits">
+                                </div>
                             </div>
                         </div>
 
@@ -178,8 +208,27 @@ require_once __DIR__ . '/../includes/header.php';
                                 <input type="text" name="emergency_contact" class="form-control" value="<?= htmlspecialchars($formData['emergency_contact']) ?>" required placeholder="e.g. Mukesh Shah (Father)">
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label small fw-semibold">Emergency Contact Phone Number *</label>
-                                <input type="tel" name="emergency_phone" class="form-control" value="<?= htmlspecialchars($formData['emergency_phone']) ?>" required placeholder="+91 9823011223">
+                                <label for="emergency_phone" class="form-label small fw-semibold">
+                                    Emergency Contact Phone Number *
+                                </label>
+
+                                <div class="input-group">
+                                    <span class="input-group-text">+91</span>
+                                    <input
+                                        type="tel"
+                                        id="emergency_phone"
+                                        name="emergency_phone"
+                                        class="form-control"
+                                        value="<?= htmlspecialchars($formData['emergency_phone']) ?>"
+                                        required
+                                        inputmode="numeric"
+                                        pattern="[0-9]{10}"
+                                        minlength="10"
+                                        maxlength="10"
+                                        autocomplete="tel-national"
+                                        placeholder="9876543210"
+                                        title="Enter exactly 10 digits">
+                                </div>
                             </div>
                             <div class="col-12">
                                 <label class="form-label small fw-semibold">Permanent Home Address</label>
