@@ -54,6 +54,33 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         });
     });
+    // Show/hide password toggle on the login form
+    const passwordInput = document.getElementById('password');
+    const togglePassword = document.getElementById('togglePassword');
+
+    if (passwordInput && togglePassword) {
+        const eyeIcon = togglePassword.querySelector('i');
+
+        togglePassword.addEventListener('click', function () {
+            const shouldShow = passwordInput.type === 'password';
+
+            // Toggle visibility without changing the password value.
+            passwordInput.type = shouldShow ? 'text' : 'password';
+
+            togglePassword.setAttribute(
+                'aria-label',
+                shouldShow ? 'Hide password' : 'Show password'
+            );
+
+            togglePassword.setAttribute('aria-pressed', String(shouldShow));
+
+            // Update the eye icon.
+            if (eyeIcon) {
+                eyeIcon.classList.toggle('bi-eye', !shouldShow);
+                eyeIcon.classList.toggle('bi-eye-slash', shouldShow);
+            }
+        });
+    }
 
     // Auto-dismiss alerts after 5 seconds
     const alerts = document.querySelectorAll('.alert:not(.alert-permanent)');

@@ -131,14 +131,29 @@ require_once __DIR__ . '/../includes/header.php';
                             </div>
                         </div>
 
+
                         <div class="mb-4">
                             <label for="password" class="form-label small fw-semibold">Password</label>
                             <div class="input-group">
-                                <span class="input-group-text bg-light text-muted"><i class="bi bi-lock"></i></span>
+                                <span class="input-group-text bg-light text-muted">
+                                    <i class="bi bi-lock"></i>
+                                </span>
+
                                 <input type="password" class="form-control" id="password" name="password" required placeholder="Enter password">
+
+                                <button type="button"
+                                        class="btn btn-outline-secondary"
+                                        id="togglePassword"
+                                        aria-label="Show password"
+                                        aria-controls="password"
+                                        aria-pressed="false">
+                                    <i class="bi bi-eye" aria-hidden="true"></i>
+                                </button>
+
                                 <div class="invalid-feedback">Please enter your password.</div>
                             </div>
                         </div>
+
 
                         <div class="d-grid mb-3">
                             <button type="submit" class="btn btn-teal btn-lg" style="font-size: 1rem;">
