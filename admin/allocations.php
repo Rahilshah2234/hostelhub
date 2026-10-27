@@ -77,14 +77,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             // 3. If student had an existing room, free that bed
             if ($currentRoomId) {
-                $oldRoomStmt = $pdo->prepare("SELECT Occupied, Capacity FROM rooms WHERE RoomID = :oldid FOR UPDATE");
+                $oldRoomStmt = $pdo->prepare("SELECT Occupied, Capacity, Status FROM rooms WHERE RoomID = :oldid FOR UPDATE");
                 $oldRoomStmt->execute([':oldid' => $currentRoomId]);
                 $oldRoom = $oldRoomStmt->fetch();
 
                 if ($oldRoom) {
                     $newOldOcc = max(0, (int)$oldRoom['Occupied'] - 1);
-                    $upOld = $pdo->prepare("UPDATE rooms SET Occupied = :occ, Status = 'Available' WHERE RoomID = :id");
-                    $upOld->execute([':occ' => $newOldOcc, ':id' => $currentRoomId]);
+                    $newOldStatus = ($oldRoom['Status'] === 'Maintenance') ? 'Maintenance' : 'Available';
+                    $upOld = $pdo->prepare("UPDATE rooms SET Occupied = :occ, Status = :stat WHERE RoomID = :id");
+                    $upOld->execute([':occ' => $newOldOcc, ':stat' => $newOldStatus, ':id' => $currentRoomId]);
                 }
 
                 // Close previous allocation log
@@ -159,14 +160,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $roomId = $student['RoomID'];
 
                     // Decrement room occupancy
-                    $rStmt = $pdo->prepare("SELECT Occupied, Capacity FROM rooms WHERE RoomID = :rid FOR UPDATE");
+                    $rStmt = $pdo->prepare("SELECT Occupied, Capacity, Status FROM rooms WHERE RoomID = :rid FOR UPDATE");
                     $rStmt->execute([':rid' => $roomId]);
                     $room = $rStmt->fetch();
 
                     if ($room) {
                         $newOcc = max(0, (int)$room['Occupied'] - 1);
-                        $pdo->prepare("UPDATE rooms SET Occupied = :occ, Status = 'Available' WHERE RoomID = :rid")
-                            ->execute([':occ' => $newOcc, ':rid' => $roomId]);
+                        $newStatus = ($room['Status'] === 'Maintenance') ? 'Maintenance' : 'Available';
+                        $pdo->prepare("UPDATE rooms SET Occupied = :occ, Status = :stat WHERE RoomID = :rid")
+                            ->execute([':occ' => $newOcc, ':stat' => $newStatus, ':rid' => $roomId]);
                     }
 
                     // Clear room from student

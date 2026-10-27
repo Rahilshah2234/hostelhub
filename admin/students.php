@@ -68,8 +68,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $roomId = $curr->fetchColumn();
 
                 if ($roomId) {
-                    $pdo->prepare("UPDATE rooms SET Occupied = GREATEST(0, Occupied - 1), Status = 'Available' WHERE RoomID = :rid")
-                        ->execute([':rid' => $roomId]);
+                    $pdo->prepare("
+                        UPDATE rooms 
+                        SET Occupied = GREATEST(0, Occupied - 1), 
+                            Status = CASE WHEN Status = 'Maintenance' THEN 'Maintenance' ELSE 'Available' END 
+                        WHERE RoomID = :rid
+                    ")->execute([':rid' => $roomId]);
                 }
 
                 // Delete student (cascades to logins, allocations, fees, complaints, visitors)
