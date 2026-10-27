@@ -49,6 +49,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
 
                 if ($isPasswordCorrect) {
+                    // Prevent session fixation
+                    session_regenerate_id(true);
+
                     // Populate session
                     $_SESSION['user'] = [
                         'LoginID'   => $user['LoginID'],
