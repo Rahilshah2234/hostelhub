@@ -35,7 +35,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } elseif (!preg_match('/^[0-9]{10}$/', $formData['phone'])) {
             $errors[] = 'Mobile phone number must contain exactly 10 digits.';
         }
-
         if (empty($formData['emergency_contact'])) {
             $errors[] = 'Emergency contact person name is required.';
         }
