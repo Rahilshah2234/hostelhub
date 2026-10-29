@@ -12,6 +12,56 @@ document.addEventListener('DOMContentLoaded', function () {
         }, false);
     });
 
+    // Validate registration phone number inputs
+    const registrationPhoneInputs = document.querySelectorAll(
+        'input[name="phone"], input[name="emergency_phone"]'
+    );
+
+    registrationPhoneInputs.forEach(function (input) {
+        input.addEventListener('input', function () {
+            // Allow only digits and limit to 10 digits
+            input.value = input.value.replace(/\D/g, '').slice(0, 10);
+            // Validate exactly 10 digits
+            if (input.value.length !== 10) {
+                input.setCustomValidity('Enter exactly 10 digits.');
+            } else {
+                input.setCustomValidity('');
+            }
+        });
+
+
+        input.addEventListener('paste', function (event) {
+            event.preventDefault();
+
+            // Get the pasted phone number.
+            const pastedValue = event.clipboardData.getData('text').trim();
+
+            // Remove spaces, +, brackets, and other formatting.
+            let digits = pastedValue.replace(/\D/g, '');
+
+            // Remove Indian country code if included.
+            if (digits.length === 12 && digits.startsWith('91')) {
+                digits = digits.slice(2);
+            }
+
+            // Accept exactly 10 digits.
+            if (/^[0-9]{10}$/.test(digits)) {
+                input.value = digits;
+                input.setCustomValidity('');
+            } else {
+                input.value = '';
+                input.setCustomValidity(
+                    'Enter exactly 10 digits. You may include +91 when pasting.'
+                );
+            }
+            // Update validation immediately.
+            input.dispatchEvent(new Event('input', { bubbles: true }));
+            // Show validation message for invalid pasted numbers.
+            if (!input.checkValidity()) {
+                input.reportValidity();
+            }
+        });
+    });
     // Show/hide password toggle on the login form
     const passwordInput = document.getElementById('password');
     const togglePassword = document.getElementById('togglePassword');
